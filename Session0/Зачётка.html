@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Зачётный лист — год нулевой</title>
+<style>
+@page { size: A4 landscape; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Times New Roman", Times, serif;
+  color: #111;
+  -webkit-print-color-adjust: exact;
+}
+
+.sheet {
+  width: 297mm;
+  height: 209.6mm;
+  display: flex;
+  position: relative;
+  page-break-after: always;
+  break-after: page;
+  overflow: hidden;
+}
+.booklet:last-child .sheet:last-child { page-break-after: auto; break-after: auto; }
+.sheet.rot { transform: rotate(180deg); }
+
+.fold { position: absolute; left: 148.5mm; width: 0; border-left: 0.2mm solid #111; }
+.fold.t { top: 0; height: 4mm; }
+.fold.b { bottom: 0; height: 4mm; }
+
+.half { width: 148.5mm; height: 100%; padding: 9mm 8mm; }
+.frame {
+  height: 100%;
+  border: 0.9mm double #111;
+  padding: 5mm 5.5mm;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.frame::before {
+  content: "";
+  position: absolute;
+  top: 1.6mm; right: 1.6mm; bottom: 1.6mm; left: 1.6mm;
+  border: 0.2mm solid #111;
+  pointer-events: none;
+}
+.corner { position: absolute; font-size: 7pt; line-height: 1; }
+.corner.tl { top: 2.6mm; left: 2.6mm; }
+.corner.tr { top: 2.6mm; right: 2.6mm; }
+.corner.bl { bottom: 2.6mm; left: 2.6mm; }
+.corner.br { bottom: 2.6mm; right: 2.6mm; }
+
+.caps { text-transform: uppercase; letter-spacing: 0.18em; }
+.tiny { font-size: 7pt; letter-spacing: 0.06em; color: #333; }
+.center { text-align: center; }
+.grow { flex: 1 1 auto; }
+.grow-s { flex: 0.45 1 auto; }
+
+.stub {
+  position: absolute;
+  top: 3.4mm; right: 5mm;
+  font-size: 6.5pt;
+  letter-spacing: 0.08em;
+  color: #444;
+}
+
+.rule { border-top: 0.2mm solid #111; margin: 2.5mm 0; }
+.orn { text-align: center; font-size: 8pt; letter-spacing: 0.5em; margin: 2mm 0; }
+
+.cover { text-align: center; }
+.cover .uni { font-size: 8pt; margin-top: 2mm; }
+.cover .title { font-size: 25pt; letter-spacing: 0.1em; margin: 3mm 0 1mm; }
+.cover .sub { font-size: 12pt; margin: 0; }
+.cover .year { font-size: 14pt; margin: 1.5mm 0 0; }
+.cover .place { font-size: 8.5pt; font-style: italic; margin-top: 2mm; }
+
+.stamps { display: flex; gap: 4mm; justify-content: center; margin: 4mm 0 3mm; }
+.tag {
+  border: 0.3mm solid #111;
+  padding: 1.6mm 3mm;
+  font-size: 8pt;
+  letter-spacing: 0.08em;
+}
+.tag b { font-size: 10pt; letter-spacing: 0.12em; }
+
+.fields { text-align: left; font-size: 10pt; }
+.fields div { margin: 0 0 3.4mm; }
+.dots { border-bottom: 0.2mm dotted #111; display: inline-block; }
+
+.head { font-size: 12.5pt; text-align: center; }
+.lead { font-size: 8pt; text-align: center; color: #333; margin: 1.5mm 0 3mm; }
+
+table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+th {
+  font-size: 7pt;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 0.4mm solid #111;
+  padding: 0 1mm 1mm;
+  text-align: center;
+}
+th.l { text-align: left; }
+td { border-bottom: 0.2mm solid #111; padding: 5.4mm 1mm; text-align: center; }
+td.l { text-align: left; }
+td .hint { font-size: 7pt; color: #444; }
+.cell { width: 13mm; }
+.seal { width: 19mm; }
+.seal-mark {
+  display: block;
+  width: 15mm; height: 15mm;
+  border: 0.25mm dashed #555;
+  margin: 0 auto;
+}
+
+.blocks { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; }
+.block .name { font-size: 10pt; }
+.block .by { font-size: 7.5pt; font-style: italic; color: #333; }
+.block .row { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2.2mm; }
+.block .row .body { flex: 1 1 auto; font-size: 8.5pt; }
+.box {
+  display: inline-block;
+  width: 3mm; height: 3mm;
+  border: 0.25mm solid #111;
+  margin: 0 1mm 0 2mm;
+  vertical-align: -0.2mm;
+}
+.seal-box {
+  width: 17mm; height: 17mm;
+  border: 0.3mm dashed #333;
+  font-size: 5.5pt;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 0 0 auto;
+}
+.lines { margin-top: 1mm; }
+.line { border-bottom: 0.2mm solid #111; height: 11mm; }
+.sign { display: flex; gap: 4mm; align-items: flex-end; margin-top: 3mm; }
+.sign .seal-box { width: 24mm; height: 24mm; }
+.sign .col { flex: 1 1 auto; font-size: 8pt; }
+.foot { font-size: 6.5pt; color: #444; text-align: center; line-height: 1.3; }
+.dir { margin-top: 4mm; font-size: 9.5pt; }
+.bonus { display: flex; align-items: center; gap: 3mm; }
+.bonus .seal-box { width: 14mm; height: 14mm; }
+</style>
+</head>
+<body>
+
+<!-- booklet: скрипт копирует этот блок на каждый номер -->
+<div class="booklet">
+  <div class="sheet">
+    <div class="fold t"></div><div class="fold b"></div>
+    <div class="half"><div class="frame">
+      <span class="corner tl">&#9670;</span><span class="corner tr">&#9670;</span>
+      <span class="corner bl">&#9670;</span><span class="corner br">&#9670;</span>
+      <div class="stub">Лист № {{NUMBER}}</div>
+      <div class="head caps">III. Рекомендация</div>
+      <div class="lead">Заполняется куратором по итогам дня.</div>
+      <div class="lines">
+        <div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="line"></div><div class="line"></div><div class="line"></div>
+      </div>
+      <div class="dir">Направление подготовки <span class="dots" style="width:34mm"></span></div>
+      <div class="grow"></div>
+      <div class="sign">
+        <div class="seal-box">печать<br>куратора</div>
+        <div class="col">
+          Дата <span class="dots" style="width:28mm"></span><br><br>
+          Подпись <span class="dots" style="width:24mm"></span>
+        </div>
+      </div>
+      <div class="grow"></div>
+      <div class="orn">&#9670;</div>
+      <div class="foot">
+        Лист выдан на время подготовительных курсов и студенческим билетом не является.<br>
+        Права находиться в корпусах университета предъявителю не даёт.<br>
+        Форма У-0 &middot; канцелярия Стриксхейвена &middot; год нулевой
+      </div>
+    </div></div>
+    <div class="half"><div class="frame cover">
+      <span class="corner tl">&#9670;</span><span class="corner tr">&#9670;</span>
+      <span class="corner bl">&#9670;</span><span class="corner br">&#9670;</span>
+      <div>
+        <div class="uni caps">Стриксхейвенский университет</div>
+        <div class="orn">&#9670;&#9670;&#9670;</div>
+        <div class="title caps">Зачётный<br>лист</div>
+        <div class="sub caps">Подготовительные курсы</div>
+        <div class="year caps">Год нулевой</div>
+        <div class="rule"></div>
+        <div class="place">Нулевой флигель &middot; кафедра мер и практик</div>
+      </div>
+      <div class="grow-s"></div>
+      <div>
+        <div class="stamps">
+          <div class="tag">Группа<br><b>{{GROUP}}</b></div>
+          <div class="tag">Лист №<br><b>{{NUMBER}}</b></div>
+        </div>
+        <div class="fields">
+          <div>Абитуриент <span class="dots" style="width:48mm"></span></div>
+          <div>Раса <span class="dots" style="width:58mm"></span></div>
+          <div>Прибыл из <span class="dots" style="width:47mm"></span></div>
+        </div>
+      </div>
+      <div class="grow"></div>
+      <div class="orn">&#9670;</div>
+      <div class="tiny center">Куратор курсов: госпожа Тамсин Грач &middot; форма У-0</div>
+    </div></div>
+  </div>
+
+  <div class="sheet inner">
+    <div class="fold t"></div><div class="fold b"></div>
+    <div class="half"><div class="frame">
+      <span class="corner tl">&#9670;</span><span class="corner tr">&#9670;</span>
+      <span class="corner bl">&#9670;</span><span class="corner br">&#9670;</span>
+      <div class="stub">Лист № {{NUMBER}}</div>
+      <div class="head caps">I. Кафедра мер</div>
+      <div class="lead">Шесть испытаний. Порядок выбирает абитуриент.<br>Пересдача не предусмотрена.</div>
+      <table>
+        <tr><th class="l">Испытание</th><th class="cell">Очередь</th><th class="cell">Замер</th><th class="seal">Отметка</th></tr>
+        <tr><td class="l">Гиря<div class="hint">поднять, перенести, поставить</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+        <tr><td class="l">Бечёвка<div class="hint">пройти, не задев колокольчики</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+        <tr><td class="l">Ведро<div class="hint">держать руки в воде на счёт</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+        <tr><td class="l">Доска с прорезями<div class="hint">сложить фигуру без ключа</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+        <tr><td class="l">Треснувшее зеркало<div class="hint">назвать, что изменилось</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+        <tr><td class="l">Пустое кресло<div class="hint">уговорить засчитать провал</div></td><td></td><td></td><td class="seal"><span class="seal-mark"></span></td></tr>
+      </table>
+      <div class="grow"></div>
+      <div class="tiny center">Отметку ставит куратор. Исправления недействительны.</div>
+    </div></div>
+    <div class="half"><div class="frame">
+      <span class="corner tl">&#9670;</span><span class="corner tr">&#9670;</span>
+      <span class="corner bl">&#9670;</span><span class="corner br">&#9670;</span>
+      <div class="stub">Лист № {{NUMBER}}</div>
+      <div class="head caps">II. Практики</div>
+      <div class="lead">Три занятия. Отметка &mdash; за участие, не за успех.</div>
+      <div class="blocks">
+        <div class="block">
+          <div class="name"><b>1. Речь и жест</b></div>
+          <div class="by">ведёт Ясмин Перо</div>
+          <div class="row">
+            <div class="body">
+              Взято с кафедры:
+              <span class="box"></span>палочка
+              <span class="box"></span>бусина
+              <span class="box"></span>семя
+              <span class="box"></span>ничего<br><br>
+              Замечания <span class="dots" style="width:42mm"></span>
+            </div>
+            <div class="seal-box">отметка</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="block">
+          <div class="name"><b>2. Полигон</b></div>
+          <div class="by">ведёт Дрог Камнебой</div>
+          <div class="row">
+            <div class="body">
+              Оружие <span class="dots" style="width:28mm"></span><br><br>
+              Дистанция <span class="dots" style="width:24mm"></span><br><br>
+              Место в строю <span class="dots" style="width:18mm"></span>
+            </div>
+            <div class="seal-box">отметка</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="block">
+          <div class="name"><b>3. Практика вне расписания</b></div>
+          <div class="by">уборка полигона</div>
+          <div class="row">
+            <div class="body">
+              Как решено:
+              <span class="box"></span>силой
+              <span class="box"></span>хитростью
+              <span class="box"></span>иначе<br><br>
+              <span class="dots" style="width:42mm"></span>
+            </div>
+            <div class="seal-box">отметка</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="bonus">
+          <div class="seal-box">поощрение</div>
+          <div class="tiny">Ставится сверх программы, по усмотрению преподавателя.</div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+<!-- /booklet -->
+
+</body>
+</html>
