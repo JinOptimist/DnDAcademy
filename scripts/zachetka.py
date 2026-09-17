@@ -12,12 +12,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = REPO_ROOT / "Session0" / "Зачётка.html"
 OUT_DIR = REPO_ROOT / "ForPrint" / "ReadyForPrint"
+SESSION_DIR = REPO_ROOT / "ForPrint" / "Сессия0"
 OUT_NAME = "Зачётка-Сессия0"
 EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 EDGE_ALT = Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe")
 
-DEFAULT_NUMBERS = ["0-0417", "0-0418", "0-0419", "0-0420"]
 DEFAULT_GROUP = "П-0 / IV"
+PLAYERS = [
+    ("Артас", "0-0417"),
+    ("Эона", "0-0418"),
+    ("Готрек", "0-0419"),
+]
 
 BOOKLET_RE = re.compile(
     r"<!-- booklet:.*?-->\s*(.*?)\s*<!-- /booklet -->",
@@ -29,7 +34,13 @@ def fill(block: str, number: str, group: str) -> str:
     return block.replace("{{NUMBER}}", number).replace("{{GROUP}}", group)
 
 
-def build_html(template: str, numbers: list[str], group: str, rotate_inner: bool) -> str:
+def build_html(
+    template: str,
+    numbers: list[str],
+    group: str,
+    rotate_inner: bool,
+    title: str | None = None,
+) -> str:
     match = BOOKLET_RE.search(template)
     if not match:
         raise SystemExit("В HTML нет блока <!-- booklet --> … <!-- /booklet -->")
@@ -41,7 +52,15 @@ def build_html(template: str, numbers: list[str], group: str, rotate_inner: bool
             html = html.replace('class="sheet inner"', 'class="sheet inner rot"', 1)
         copies.append(html)
     body = "\n".join(copies)
-    return BOOKLET_RE.sub(body, template, count=1)
+    out = BOOKLET_RE.sub(body, template, count=1)
+    if title:
+        out = re.sub(
+            r"<title>.*?</title>",
+            f"<title>{title}</title>",
+            out,
+            count=1,
+        )
+    return out
 
 
 def find_edge() -> Path:
@@ -78,18 +97,17 @@ def print_pdf(html_text: str, pdf_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Зачётка Сессии 0 → PDF")
-    parser.add_argument(
-        "--numbers",
-        nargs="+",
-        default=DEFAULT_NUMBERS,
-        help="номера листов, по одному на книжку",
-    )
     parser.add_argument("--group", default=DEFAULT_GROUP, help="номер группы")
     parser.add_argument(
         "--flip",
         choices=("short", "long"),
         default="short",
         help="переворот при двусторонней печати (по умолчанию short)",
+    )
+    parser.add_argument(
+        "--combined",
+        action="store_true",
+        help="один PDF со всеми книжками в ReadyForPrint",
     )
     args = parser.parse_args()
     try:
@@ -99,16 +117,27 @@ def main() -> None:
 
     if not TEMPLATE.is_file():
         raise SystemExit(f"Нет шаблона: {TEMPLATE.relative_to(REPO_ROOT)}")
-    html_text = build_html(
-        TEMPLATE.read_text(encoding="utf-8"),
-        args.numbers,
-        args.group,
-        args.flip == "long",
-    )
-    suffix = "" if args.flip == "short" else "-long"
-    out = OUT_DIR / f"{OUT_NAME}{suffix}.pdf"
-    print_pdf(html_text, out)
-    print(out.relative_to(REPO_ROOT).as_posix())
+    template = TEMPLATE.read_text(encoding="utf-8")
+    rotate = args.flip == "long"
+    SESSION_DIR.mkdir(parents=True, exist_ok=True)
+
+    for name, number in PLAYERS:
+        title = f"Зачётный лист — {name} — {number}"
+        html_text = build_html(template, [number], args.group, rotate, title)
+        html_path = SESSION_DIR / f"Зачётка-{name}.html"
+        pdf_path = SESSION_DIR / f"Зачётка-{name}.pdf"
+        html_path.write_text(html_text, encoding="utf-8")
+        print_pdf(html_text, pdf_path)
+        print(html_path.relative_to(REPO_ROOT).as_posix())
+        print(pdf_path.relative_to(REPO_ROOT).as_posix())
+
+    if args.combined:
+        numbers = [number for _, number in PLAYERS]
+        html_text = build_html(template, numbers, args.group, rotate)
+        suffix = "" if args.flip == "short" else "-long"
+        out = OUT_DIR / f"{OUT_NAME}{suffix}.pdf"
+        print_pdf(html_text, out)
+        print(out.relative_to(REPO_ROOT).as_posix())
 
 
 if __name__ == "__main__":
